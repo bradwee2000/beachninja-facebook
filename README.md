@@ -1,9 +1,9 @@
 # beachninja-facebook
-Easy to use wrapper for Facebook API, meant for use on Google App Engine. Uses App Engine's URLFetchServiceFactory.
+Easy-to-use wrapper for Facebook API, meant for use on Google App Engine. Uses App Engine's URLFetchServiceFactory URLFetchServiceFactory.
 
-Requires beachninja-url-fetch - a wrapper for Google App Engine's URLFetchServiceFactory
+Requires [beachninja-url-fetch](https://github.com/bradwee2000/beachninja-url-fetch) - a wrapper for Google App Engine's URLFetchServiceFactory.
 
-## Posting to Facebook Example Usage
+## Posting to Facebook Usage Example
 
 ```java
 facebookService.post(FacebookPostRequest.builder()
@@ -16,7 +16,7 @@ facebookService.post(FacebookPostRequest.builder()
     .build());
 ```
 
-## Facebook Scrape Example Usage
+## Facebook Scrape Usage Example
 
 ```java
 facebookService.scrape(FacebookScrapeRequest.builder()
