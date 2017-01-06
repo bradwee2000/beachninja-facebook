@@ -6,7 +6,7 @@ Requires [beachninja-url-fetch](https://github.com/bradwee2000/beachninja-url-fe
 ## Posting to Facebook Usage Example
 
 ```java
-facebookService.post(FacebookPostRequest.builder()
+final FacebookPostResponse response = facebookService.post(FacebookPostRequest.builder()
     .facebookId("id")
     .title("Post Title")
     .message("Post Message")
@@ -19,14 +19,14 @@ facebookService.post(FacebookPostRequest.builder()
 ## Facebook Scrape Usage Example
 
 ```java
-facebookService.scrape(FacebookScrapeRequest.builder()
+final FacebookScrapeResponse response = facebookService.scrape(FacebookScrapeRequest.builder()
     .addLink("https://test1.link.com")
     .addLink("https://test2.link.com")
     .build());
 ```
 
 ```java
-facebookService.scrape(FacebookScrapeRequest.builder()
+final FacebookScrapeResponse response = facebookService.scrape(FacebookScrapeRequest.builder()
     .addLinks("https://test1.link.com", "https://test2.link.com")
     .build());
 ```
