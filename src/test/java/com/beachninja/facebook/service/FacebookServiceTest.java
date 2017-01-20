@@ -1,19 +1,27 @@
 package com.beachninja.facebook.service;
 
-import com.beachninja.facebook.request.FacebookPostRequest;
-import com.beachninja.facebook.request.FacebookScrapeRequest;
-import com.beachninja.facebook.response.FacebookScrapeResponse;
+import com.beachninja.common.json.ObjectMapperProvider;
+import com.beachninja.facebook.batch.BatchItem;
+import com.beachninja.facebook.batch.BatchRequest;
+import com.beachninja.facebook.batch.BatchResponse;
+import com.beachninja.facebook.post.FacebookPostRequest;
+import com.beachninja.facebook.scrape.FacebookScrapeRequest;
+import com.beachninja.facebook.scrape.FacebookScrapeResponse;
 import com.beachninja.urlfetch.UrlFetchBuilder;
 import com.beachninja.urlfetch.UrlFetcher;
 import com.google.appengine.api.urlfetch.HTTPResponse;
+import org.assertj.core.api.ThrowableAssert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -36,13 +44,15 @@ public class FacebookServiceTest {
     httpResponse = mock(HTTPResponse.class);
     urlFetcher = mock(UrlFetcher.class);
     urlFetchBuilder = mock(UrlFetchBuilder.class);
-    facebookService = new FacebookService(urlFetcher, "mock_access_token");
+
+    facebookService = new FacebookService(urlFetcher, new ObjectMapperProvider());
 
     when(urlFetcher.connect(anyString())).thenReturn(urlFetchBuilder);
-    when(urlFetchBuilder.data(anyString(), anyString())).thenReturn(urlFetchBuilder);
+    when(urlFetchBuilder.data(anyString(), any(String.class))).thenReturn(urlFetchBuilder);
     when(urlFetchBuilder.post()).thenReturn(futureResponse);
     when(futureResponse.get()).thenReturn(httpResponse);
     when(httpResponse.getContent()).thenReturn("SUCCESS".getBytes());
+    when(httpResponse.getResponseCode()).thenReturn(200);
   }
 
   @Test
@@ -69,6 +79,24 @@ public class FacebookServiceTest {
   }
 
   @Test
+  public void testPostWithErrorResponse_shouldThrowExceptionWithFacebookErrorMessage() {
+    when(httpResponse.getResponseCode()).thenReturn(400);
+    when(httpResponse.getContent()).thenReturn(("{\"error\":{" +
+        "\"message\":\"Sample Facebook Error Message\"," +
+        "\"type\":\"OAuthException\"," +
+        "\"code\":100," +
+        "\"fbtrace_id\":\"FpPiqIX8gRv\"}}").getBytes());
+
+    assertThatThrownBy(new ThrowableAssert.ThrowingCallable() {
+      @Override
+      public void call() throws Throwable {
+        facebookService.post(FacebookPostRequest.builder()
+            .facebookId("id").build());
+      }
+    }).hasMessageContaining("Sample Facebook Error Message");
+  }
+
+  @Test
   public void testPostPayload_shouldSetPropertiesToPayload() {
     final ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
     final ArgumentCaptor<String> valueCaptor = ArgumentCaptor.forClass(String.class);
@@ -76,6 +104,7 @@ public class FacebookServiceTest {
     // Call post
     facebookService.post(FacebookPostRequest.builder()
         .facebookId("id")
+        .accessToken("mock_access_token")
         .title("Post Title")
         .message("Post Message")
         .description("Post Description")
@@ -98,6 +127,7 @@ public class FacebookServiceTest {
 
   @Test
   public void testScrape_shouldConnectToFacebookScrapeAPI() {
+    when(httpResponse.getContent()).thenReturn("[{\"code\":200,\"body\":\"SUCCESS\"}]".getBytes());
     final ArgumentCaptor<String> urlCaptor = ArgumentCaptor.forClass(String.class);
 
     // Call scrape
@@ -107,11 +137,13 @@ public class FacebookServiceTest {
     verify(urlFetcher).connect(urlCaptor.capture());
 
     // Verify correct Facebook Scrape API URL is used
-    assertThat(urlCaptor.getValue()).isEqualTo("https://graph.facebook.com/v2.8/");
+    assertThat(urlCaptor.getValue()).isEqualTo("https://graph.facebook.com");
   }
 
   @Test
   public void testScrapePayload_shouldSetParametersToPayload() {
+    when(httpResponse.getContent()).thenReturn("[{\"code\":200,\"body\":\"SUCCESS\"}]".getBytes());
+
     final ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
     final ArgumentCaptor<String> valueCaptor = ArgumentCaptor.forClass(String.class);
 
@@ -121,6 +153,7 @@ public class FacebookServiceTest {
     // Verify urlFetcher is used
     verify(urlFetchBuilder, atLeastOnce()).data(keyCaptor.capture(), valueCaptor.capture());
 
+    //TODO
     // Verify that all key parameters are included
     assertThat(keyCaptor.getAllValues())
         .containsExactly("id", "scrape", "access_token", "id", "scrape", "access_token");
@@ -132,12 +165,64 @@ public class FacebookServiceTest {
 
   @Test
   public void testScrapeResponse_shouldReturnResponse() {
+    when(httpResponse.getContent()).thenReturn("[{\"code\":200,\"body\":\"SUCCESS\"}]".getBytes());
     final FacebookScrapeResponse response = facebookService.scrape(FacebookScrapeRequest.builder()
         .addLink("localhost1").addLink("localhost2").build());
 
     // Verify that each link contains a response.
-    assertThat(response.getResults())
-        .containsKeys("localhost1", "localhost2")
-        .containsValues("SUCCESS", "SUCCESS");
+    assertThat(response.getApiResponse().getBody())
+        .isEqualTo("SUCCESS");
+  }
+
+  @Test
+  public void testScrapeWithErrorResponse_shouldThrowExceptionWithFacebookErrorMessage() {
+    when(httpResponse.getResponseCode()).thenReturn(400);
+    when(httpResponse.getContent()).thenReturn(("{\"error\":{" +
+        "\"message\":\"Sample Facebook Error Message\"," +
+        "\"type\":\"OAuthException\"," +
+        "\"code\":100," +
+        "\"fbtrace_id\":\"FpPiqIX8gRv\"}}").getBytes());
+
+    // TODO
+//    assertThat(facebookService.scrape(FacebookScrapeRequest.builder().addLink("link").build())
+//        .getResults().get("link"))
+//        .isEqualTo("Sample Facebook Error Message");
+  }
+
+  @Test
+  public void testBatch_shouldParametersToPayload() throws UnsupportedEncodingException {
+    final ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
+    final ArgumentCaptor<String> valueCaptor = ArgumentCaptor.forClass(String.class);
+
+    when(httpResponse.getContent()).thenReturn("[{\"code\":200,\"body\":\"SUCCESS\"}]".getBytes());
+
+    facebookService.submitBatch(BatchRequest.builder().accessToken("sample_token")
+        .addItem(BatchItem.builder().post().relativeUrl("/post").body("message=hello&description=world").build())
+        .addItem(BatchItem.builder().get().relativeUrl("/get?key=1").build())
+        .build());
+
+    verify(urlFetchBuilder, atLeastOnce()).data(keyCaptor.capture(), valueCaptor.capture());
+
+    assertThat(keyCaptor.getAllValues()).containsOnly("access_token", "batch");
+
+    assertThat(valueCaptor.getAllValues())
+        .containsOnly("sample_token",
+            URLEncoder.encode("[{\"method\":\"POST\",\"relative_url\":\"/post\",\"body\":\"message=hello&description=world\"}," +
+                "{\"method\":\"GET\",\"relative_url\":\"/get?key=1\"}]", "UTF-8"));
+  }
+
+  @Test
+  public void testBatchResponse_shouldReturnResponse() {
+    when(httpResponse.getContent()).thenReturn("[{\"code\":200,\"body\":\"SUCCESS\"}]".getBytes());
+
+    final BatchRequest request = BatchRequest.builder()
+        .addItem(BatchItem.builder().post().relativeUrl("/post").body("message=hello&description=world").build())
+        .addItem(BatchItem.builder().get().relativeUrl("/get?key=1").build())
+        .build();
+
+    final BatchResponse response = facebookService.submitBatch(request);
+
+    assertThat(response.getCode()).isEqualTo(200);
+    assertThat(response.getBody()).isEqualTo("SUCCESS");
   }
 }

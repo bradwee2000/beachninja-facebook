@@ -8,7 +8,7 @@ Requires [beachninja-url-fetch](https://github.com/bradwee2000/beachninja-url-fe
 ```java
 final FacebookPostResponse response = facebookService.post(FacebookPostRequest.builder()
     .facebookId("id")
-    .title("Post Title")
+    .name("Post Title")
     .message("Post Message")
     .description("Post Description")
     .link("https://localhost:8080/post_link")

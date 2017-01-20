@@ -1,11 +1,15 @@
 package com.beachninja.facebook.batch;
 
 import com.beachninja.common.json.ObjectMapperProvider;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Sets;
+import org.apache.commons.io.IOUtils;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -13,39 +17,24 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author bradwee2000@gmail.com
  */
 public class BatchResponseTest {
-
-  private final BatchItem batchItem = BatchItem.builder().post().relativeUrl("/test").body("message=hello").build();
-
-  private final BatchRequest orig = BatchRequest.builder().accessToken("token").addItem(batchItem).build();
-  private final BatchRequest same = BatchRequest.builder().accessToken("token").addItem(batchItem).build();
-  private final BatchRequest diffToken = BatchRequest.builder().accessToken("diffToken").addItem(batchItem).build();
-  private final BatchRequest diffItems = BatchRequest.builder()
-      .accessToken("token").addItems(batchItem, batchItem).build();
+  private static final Logger LOG = LoggerFactory.getLogger(BatchResponseTest.class);
+  private static final ObjectMapper om = new ObjectMapperProvider().get();
 
   @Test
-  public void testBuild_shouldSetProperties() {
-    assertThat(orig.getAccessToken()).isEqualTo("token");
-    assertThat(orig.getBatchItems()).containsExactly(batchItem);
-  }
+  public void testDeserialize_shouldConstructObjectFromJson() throws IOException {
+    final String json = IOUtils.toString(getClass().getResourceAsStream("/sample-batch-response.json"), "UTF-8");
+    final List<BatchResponse> responses = om.readValue(json, new TypeReference<List<BatchResponse>>() {});
 
-  @Test
-  public void testEquals_shouldBeEqualIfAllPropertiesAreEqual() {
-    assertThat(same).isEqualTo(orig);
-    assertThat(orig).isEqualTo(orig).isEqualTo(same)
-        .isNotEqualTo(diffToken).isNotEqualTo(diffItems);
-  }
+    assertThat(responses).hasSize(1);
 
-  @Test
-  public void testHashcode_shouldHaveEqualHashcodeIfAllPropertiesAreEqual() {
-    assertThat(Sets.newHashSet(orig, same, diffToken, diffItems))
-        .containsOnly(orig, diffToken, diffItems);
-  }
+    final BatchResponse batchResponse = responses.get(0);
 
-  @Test
-  public void testSerializeDeserialize_shouldReturnEqualObject() throws IOException {
-    final ObjectMapper om = new ObjectMapperProvider().get();
-    final String json = om.writeValueAsString(orig);
-    final BatchRequest batchRequest = om.readValue(json, BatchRequest.class);
-    assertThat(batchRequest).isEqualTo(orig);
+    assertThat(batchResponse.getCode()).isEqualTo(200);
+    assertThat(batchResponse.getHeaders()).hasSize(7)
+        .contains(new Header("Access-Control-Allow-Origin", "*"))
+        .contains(new Header("Content-Type", "text/javascript; charset=UTF-8"));
+    assertThat(batchResponse.getBody())
+        .contains("https://www.google.com")
+        .contains("Search the world's information, including webpages, images, videos and more.");
   }
 }

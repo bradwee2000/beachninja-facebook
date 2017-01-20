@@ -1,10 +1,9 @@
-package com.beachninja.facebook.response;
+package com.beachninja.facebook.scrape;
 
-import com.beachninja.facebook.request.FacebookScrapeRequest;
+import com.beachninja.facebook.batch.BatchResponse;
 import com.google.appengine.repackaged.com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.Maps;
-import org.apache.commons.lang.exception.ExceptionUtils;
 
 import java.util.Map;
 
@@ -19,30 +18,30 @@ public class FacebookScrapeResponse {
     return new Builder();
   }
 
-  private final FacebookScrapeRequest request;
+  private final BatchResponse apiResponse;
   private final Map<String, String> results; // Api response per link
 
   /**
    * For jackson deserialization.
    */
   private FacebookScrapeResponse() {
-    request = null;
     results = null;
+    apiResponse = null;
   }
 
   /**
    * Use builder class to construct.
-   * @param request
+   * @param apiResponse
    * @param results
    */
-  private FacebookScrapeResponse(final FacebookScrapeRequest request,
+  private FacebookScrapeResponse(final BatchResponse apiResponse,
                                  final Map<String, String> results) {
-    this.request = request;
+    this.apiResponse = apiResponse;
     this.results = Maps.newHashMap(results);
   }
 
-  public FacebookScrapeRequest getRequest() {
-    return request;
+  public BatchResponse getApiResponse() {
+    return apiResponse;
   }
 
   /**
@@ -61,19 +60,19 @@ public class FacebookScrapeResponse {
       return true;
     }
     final FacebookScrapeResponse rhs = (FacebookScrapeResponse) obj;
-    return Objects.equal(request, rhs.request)
+    return Objects.equal(apiResponse, rhs.apiResponse)
         && Objects.equal(results, rhs.results);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(request, results);
+    return Objects.hashCode(results, apiResponse);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("request", request)
+        .add("apiResponse", apiResponse)
         .add("results", results)
         .toString();
   }
@@ -83,25 +82,22 @@ public class FacebookScrapeResponse {
    */
   public static class Builder {
 
-    private FacebookScrapeRequest request;
+    private BatchResponse apiResponse;
 
     private final Map<String, String> results = Maps.newHashMap();
 
-    public Builder request(final FacebookScrapeRequest request) {
-      this.request = request;
+    public Builder apiResponse(final BatchResponse apiResponse) {
+      this.apiResponse = apiResponse;
       return this;
     }
+
     public Builder addResult(final String link, String apiResponse) {
       results.put(link, apiResponse);
       return this;
     }
-    public Builder addResult(final String link, final Exception e) {
-      results.put(link, ExceptionUtils.getFullStackTrace(e));
-      return this;
-    }
 
     public FacebookScrapeResponse build() {
-      return new FacebookScrapeResponse(request, results);
+      return new FacebookScrapeResponse(apiResponse, results);
     }
   }
 }

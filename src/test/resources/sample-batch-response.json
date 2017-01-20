@@ -1,0 +1,36 @@
+[
+  {
+    "code": 200,
+    "headers": [
+      {
+        "name": "Access-Control-Allow-Origin",
+        "value": "*"
+      },
+      {
+        "name": "Vary",
+        "value": "Accept-Encoding"
+      },
+      {
+        "name": "Pragma",
+        "value": "no-cache"
+      },
+      {
+        "name": "Cache-Control",
+        "value": "private, no-cache, no-store, must-revalidate"
+      },
+      {
+        "name": "Expires",
+        "value": "Sat, 01 Jan 2000 00:00:00 GMT"
+      },
+      {
+        "name": "Facebook-API-Version",
+        "value": "v2.8"
+      },
+      {
+        "name": "Content-Type",
+        "value": "text/javascript; charset=UTF-8"
+      }
+    ],
+    "body": "{\"url\": \"https://www.google.com/\",\"type\": \"website\",\"title\": \"Google\",\"image\": [{\"url\": \"https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png\"}],\"description\": \"Search the world's information, including webpages, images, videos and more. Google has many special features to help you find exactly what you're looking for.\",\"updated_time\": \"2017-01-06T12:59:55+0000\",\"id\": \"400854551051\"}"
+  }
+]

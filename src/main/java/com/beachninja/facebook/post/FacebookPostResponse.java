@@ -1,6 +1,5 @@
-package com.beachninja.facebook.response;
+package com.beachninja.facebook.post;
 
-import com.beachninja.facebook.request.FacebookPostRequest;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;

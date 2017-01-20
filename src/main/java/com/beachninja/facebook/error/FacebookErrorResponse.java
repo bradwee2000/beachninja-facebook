@@ -17,6 +17,10 @@ public class FacebookErrorResponse {
     return facebookError;
   }
 
+  public String getMessage() {
+    return facebookError == null ? "" : facebookError.getMessage();
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)

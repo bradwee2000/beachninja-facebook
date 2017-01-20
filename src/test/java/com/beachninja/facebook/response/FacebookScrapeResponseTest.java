@@ -1,7 +1,8 @@
 package com.beachninja.facebook.response;
 
 import com.beachninja.common.json.ObjectMapperProvider;
-import com.beachninja.facebook.request.FacebookScrapeRequest;
+import com.beachninja.facebook.scrape.FacebookScrapeRequest;
+import com.beachninja.facebook.scrape.FacebookScrapeResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import org.junit.Test;
@@ -20,40 +21,33 @@ public class FacebookScrapeResponseTest {
   private final Exception exception = new Exception("Error Msg");
 
   private final FacebookScrapeResponse orig = FacebookScrapeResponse.builder()
-      .request(request).addResult("link1", "Success").addResult("link2", exception).build();
+      .addResult("link1", "Success").build();
   private final FacebookScrapeResponse same = FacebookScrapeResponse.builder()
-      .request(request).addResult("link1", "Success").addResult("link2", exception).build();
-  private final FacebookScrapeResponse diffRequest = FacebookScrapeResponse.builder()
-      .request(null).addResult("link1", "Success").addResult("link2", exception).build();
+      .addResult("link1", "Success").build();
   private final FacebookScrapeResponse diffResult = FacebookScrapeResponse.builder()
-      .request(request).addResult("link1", "Diff Response").build();
+      .addResult("link1", "Diff Response").build();
 
   @Test
   public void testBuild_shouldSetProperties() {
-    assertThat(orig.getRequest()).isEqualTo(request);
-    assertThat(orig.getResults()).containsOnlyKeys("link1", "link2")
-        .containsValue("Success");
-    assertThat(orig.getResults().get("link2")).contains("Error Msg");
+    assertThat(orig.getResults()).containsOnlyKeys("link1").containsValue("Success");
   }
 
   @Test
   public void testEquals_shouldBeEqualIfAllPropertiesAreEqual() {
     assertThat(same).isEqualTo(orig);
-    assertThat(orig).isEqualTo(orig).isEqualTo(same)
-        .isNotEqualTo(diffRequest).isNotEqualTo(diffResult);
+    assertThat(orig).isEqualTo(orig).isEqualTo(same).isNotEqualTo(diffResult);
   }
 
   @Test
   public void testHashcode_shouldHaveSameHashcodeIfAllPropertiesAreEqual() {
-    assertThat(Sets.newHashSet(orig, same, diffRequest, diffResult))
-        .containsExactlyInAnyOrder(orig, diffRequest, diffResult);
+    assertThat(Sets.newHashSet(orig, same, diffResult))
+        .containsExactlyInAnyOrder(orig, diffResult);
   }
 
   @Test
   public void testSerializeDeserialize_shouldReturnEqualObject() throws IOException {
     final FacebookScrapeRequest request = FacebookScrapeRequest.builder().build();
-    final FacebookScrapeResponse response = FacebookScrapeResponse.builder()
-        .request(request).addResult("link1", "Success").addResult("link2", exception).build();
+    final FacebookScrapeResponse response = FacebookScrapeResponse.builder().addResult("link1", "Success").build();
 
     final ObjectMapper om = new ObjectMapperProvider().get();
     final String json = om.writeValueAsString(response);

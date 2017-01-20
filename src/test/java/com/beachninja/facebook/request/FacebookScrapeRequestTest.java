@@ -1,6 +1,7 @@
 package com.beachninja.facebook.request;
 
 import com.beachninja.common.json.ObjectMapperProvider;
+import com.beachninja.facebook.scrape.FacebookScrapeRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;

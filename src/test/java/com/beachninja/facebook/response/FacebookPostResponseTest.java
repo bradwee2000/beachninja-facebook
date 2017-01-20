@@ -1,7 +1,8 @@
 package com.beachninja.facebook.response;
 
 import com.beachninja.common.json.ObjectMapperProvider;
-import com.beachninja.facebook.request.FacebookPostRequest;
+import com.beachninja.facebook.post.FacebookPostRequest;
+import com.beachninja.facebook.post.FacebookPostResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import org.joda.time.LocalDateTime;

@@ -1,8 +1,12 @@
 package com.beachninja.facebook.request;
 
 import com.beachninja.common.json.ObjectMapperProvider;
+import com.beachninja.facebook.batch.BatchItem;
+import com.beachninja.facebook.post.FacebookPostRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,11 +41,36 @@ public class FacebookPostRequestTest {
   @Test
   public void testBuild_shouldSetProperties() {
     assertThat(orig.getFacebookId()).isEqualTo("id");
-    assertThat(orig.getTitle().get()).isEqualTo("title");
+    assertThat(orig.getName().get()).isEqualTo("title");
     assertThat(orig.getMessage().get()).isEqualTo("message");
     assertThat(orig.getDescription().get()).isEqualTo("description");
     assertThat(orig.getLink().get()).isEqualTo("link");
     assertThat(orig.getImageUrl().get()).isEqualTo("imgurl");
+    assertThat(orig.isPublished()).isTrue();
+    assertThat(orig.getScheduledPublishTimeEpoch()).isEqualTo(0);
+  }
+
+  @Test
+  public void testToUrlParams_shouldReturnAttributesAsUrlParameters() {
+    assertThat(orig.toUrlParams())
+        .contains("&name=title")
+        .contains("&message=message")
+        .contains("&link=link")
+        .contains("&picture=imgurl")
+        .contains("&description=description");
+  }
+
+  @Test
+  public void testToBatchItem_shouldReturnBatchItem() {
+    final BatchItem batchItem = orig.toBatchItem();
+    assertThat(batchItem.getMethod()).isEqualTo("POST");
+    assertThat(batchItem.getRelativeUrl()).isEqualTo("id/feed");
+    assertThat(batchItem.getBody())
+        .contains("&name=title")
+        .contains("&message=message")
+        .contains("&link=link")
+        .contains("&picture=imgurl")
+        .contains("&description=description");
   }
 
   @Test
@@ -70,10 +99,19 @@ public class FacebookPostRequestTest {
   @Test
   public void testDeserializeWithNullValues_shouldConvertNullToOptionalAbsent() throws IOException {
     final ObjectMapper om = new ObjectMapperProvider().get();
-    final String json = "{\"facebookId\":\"id\", \"title\":null, \"message\":null, \"link\":null," +
+    final String json = "{\"facebookId\":\"id\", \"name\":null, \"message\":null, \"link\":null," +
         "\"imageUrl\":null, \"description\":null}";
 
     final FacebookPostRequest request = om.readValue(json, FacebookPostRequest.class);
     assertThat(request).isEqualTo(FacebookPostRequest.builder().facebookId("id").build());
+  }
+
+  @Test
+  public void testScheduledPostRequest_shouldSetPublishToFalse() {
+    final DateTime publishDate = new DateTime(2016, 2, 1, 12, 13, 45, DateTimeZone.UTC);
+    final FacebookPostRequest request = FacebookPostRequest.builder().schedulePublish(publishDate).build();
+
+    assertThat(request.isPublished()).isFalse();
+    assertThat(request.getScheduledPublishTimeEpoch()).isEqualTo(1454328825);
   }
 }

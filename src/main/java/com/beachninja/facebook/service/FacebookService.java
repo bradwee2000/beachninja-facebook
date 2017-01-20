@@ -1,23 +1,31 @@
 package com.beachninja.facebook.service;
 
 
-import com.beachninja.facebook.annotation.FacebookAccessToken;
-import com.beachninja.facebook.request.FacebookPostRequest;
-import com.beachninja.facebook.request.FacebookScrapeRequest;
-import com.beachninja.facebook.response.FacebookPostResponse;
-import com.beachninja.facebook.response.FacebookScrapeResponse;
+import com.beachninja.common.json.ObjectMapperProvider;
+import com.beachninja.facebook.batch.BatchRequest;
+import com.beachninja.facebook.batch.BatchResponse;
+import com.beachninja.facebook.error.FacebookErrorResponse;
+import com.beachninja.facebook.exception.FacebookException;
+import com.beachninja.facebook.post.FacebookPostRequest;
+import com.beachninja.facebook.post.FacebookPostResponse;
+import com.beachninja.facebook.scrape.FacebookScrapeRequest;
+import com.beachninja.facebook.scrape.FacebookScrapeResponse;
 import com.beachninja.urlfetch.UrlFetcher;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.appengine.api.urlfetch.HTTPResponse;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.MalformedURLException;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import static com.beachninja.facebook.util.FacebookConstants.POST_URL;
-import static com.beachninja.facebook.util.FacebookConstants.SCRAPE_URL;
+import static com.beachninja.facebook.util.FacebookConstants.*;
 
 /**
  * Service to post on Facebook account time line.
@@ -44,13 +52,13 @@ public class FacebookService {
   private static final Logger LOG = LoggerFactory.getLogger(FacebookService.class);
 
   private final UrlFetcher urlFetcher;
-  private final String accessToken;
+  private final ObjectMapper om;
 
   @Inject
   public FacebookService(final UrlFetcher urlFetcher,
-                         @FacebookAccessToken final String accessToken) {
+                         final ObjectMapperProvider objectMapperProvider) {
     this.urlFetcher = urlFetcher;
-    this.accessToken = accessToken;
+    this.om = objectMapperProvider.get();
   }
 
   /**
@@ -60,19 +68,19 @@ public class FacebookService {
    */
   public FacebookPostResponse post(final FacebookPostRequest request) {
     try {
-      final HTTPResponse httpResponse = urlFetcher.connect(String.format(POST_URL, request.getFacebookId()))
-          .data("title", request.getTitle().or(""))
+      final HTTPResponse response = urlFetcher.connect(String.format(POST_URL, request.getFacebookId()))
+          .data("title", request.getName().or(""))
           .data("message", request.getMessage().or(""))
           .data("link", request.getLink().or(""))
           .data("picture", request.getImageUrl().or(""))
           .data("description", request.getDescription().or(""))
-          .data("access_token", accessToken)
+          .data("access_token", request.getAccessToken())
           .post().get();
-      final String apiResponse  = new String(httpResponse.getContent());
-
+      assertSuccessfulResponse(response);
+      final String apiResponse  = new String(response.getContent());
       return FacebookPostResponse.builder().request(request).apiResponse(apiResponse).build();
     } catch (final Exception e) {
-      return FacebookPostResponse.fail(e);
+      throw new RuntimeException(e);
     }
   }
 
@@ -84,33 +92,51 @@ public class FacebookService {
    * @return FacebookScrapeResponse
    */
   public FacebookScrapeResponse scrape(final FacebookScrapeRequest request) {
-    final FacebookScrapeResponse.Builder responseBuilder = FacebookScrapeResponse.builder().request(request);
-    for (final String link : request.getLinks()) {
-      try {
-        responseBuilder.addResult(link, scrapeUrl(link));
-      } catch (final Exception e) {
-        responseBuilder.addResult(link, e);
-      }
-    }
-    return responseBuilder.build();
+    final BatchRequest batchRequest = BatchRequest.builder()
+        .accessToken(request.getAccessToken())
+        .addItems(request.toBatchItems())
+        .build();
+
+    final BatchResponse batchResponse = submitBatch(batchRequest);
+
+    return FacebookScrapeResponse.builder().apiResponse(batchResponse).build();
   }
 
   /**
-   * Request Facebook to scrape URLs. This forces Facebook to update its cache on the
-   * URL metadata (e.g. title, description, photo, etc.)
-   *
-   * @param url the URL to scrape
-   * @return Facebook Scrape API response.
-   * @throws MalformedURLException
+   * Submits a batch request to Facebook Graph API
+   * @param request batch request
+   * @return Facebook Graph API response
+   * @throws JsonProcessingException
    * @throws ExecutionException
    * @throws InterruptedException
    */
-  private String scrapeUrl(final String url) throws MalformedURLException, ExecutionException, InterruptedException {
-    final HTTPResponse response = urlFetcher.connect(SCRAPE_URL)
-        .data("id", url)
-        .data("scrape", "true")
-        .data("access_token", accessToken)
-        .post().get();
-    return new String(response.getContent());
+  public BatchResponse submitBatch(final BatchRequest request) {
+    try {
+      final HTTPResponse response = urlFetcher.connect(BATCH_URL)
+          .data("access_token", request.getAccessToken())
+          .data("batch", URLEncoder.encode(om.writeValueAsString(request.getBatchItems()), CHARSET_UTF8))
+          .post().get();
+
+      assertSuccessfulResponse(response);
+
+      final String apiResponse = new String(response.getContent(), CHARSET_UTF8);
+
+      final List<BatchResponse> responses = om.readValue(apiResponse, new TypeReference<List<BatchResponse>>() {});
+      return responses.isEmpty() ? new BatchResponse() : responses.get(0);
+    } catch (final Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void assertSuccessfulResponse(final HTTPResponse httpResponse) {
+    try {
+      if (httpResponse.getResponseCode() != 200) {
+        final FacebookErrorResponse errorResponse = om.readValue(new String(httpResponse.getContent()),
+            FacebookErrorResponse.class);
+        throw new FacebookException(errorResponse);
+      }
+    } catch (final IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
