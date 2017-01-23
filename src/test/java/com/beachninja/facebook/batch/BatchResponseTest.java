@@ -1,6 +1,7 @@
 package com.beachninja.facebook.batch;
 
-import com.beachninja.common.json.ObjectMapperProvider;
+import com.beachninja.facebook.model.Header;
+import com.beachninja.facebook.util.TestUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.IOUtils;
@@ -18,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class BatchResponseTest {
   private static final Logger LOG = LoggerFactory.getLogger(BatchResponseTest.class);
-  private static final ObjectMapper om = new ObjectMapperProvider().get();
+  private static final ObjectMapper om = TestUtil.om();
 
   @Test
   public void testDeserialize_shouldConstructObjectFromJson() throws IOException {

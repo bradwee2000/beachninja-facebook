@@ -1,5 +1,6 @@
 package com.beachninja.facebook.batch;
 
+import com.beachninja.facebook.model.Header;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;

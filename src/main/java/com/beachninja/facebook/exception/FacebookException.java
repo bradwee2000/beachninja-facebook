@@ -11,11 +11,12 @@ public class FacebookException extends RuntimeException {
   private final FacebookError facebookError;
 
   public FacebookException(final FacebookErrorResponse errorResponse) {
-    this(errorResponse.getMessage(), errorResponse.getFacebookError());
+    this(errorResponse.getFacebookError());
+
   }
 
-  public FacebookException(final String message, final FacebookError facebookError) {
-    super(message);
+  public FacebookException(final FacebookError facebookError) {
+    super(facebookError.toString());
     this.facebookError = facebookError;
   }
 

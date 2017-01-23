@@ -1,7 +1,7 @@
 package com.beachninja.facebook.request;
 
-import com.beachninja.common.json.ObjectMapperProvider;
 import com.beachninja.facebook.scrape.FacebookScrapeRequest;
+import com.beachninja.facebook.util.TestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -43,7 +43,7 @@ public class FacebookScrapeRequestTest {
 
   @Test
   public void testSerializeDeserialize_shouldReturnEqualObject() throws IOException {
-    final ObjectMapper om = new ObjectMapperProvider().get();
+    final ObjectMapper om = TestUtil.om();
     final String json = om.writeValueAsString(orig);
     final FacebookScrapeRequest request = om.readValue(json, FacebookScrapeRequest.class);
     assertThat(request).isEqualTo(orig);

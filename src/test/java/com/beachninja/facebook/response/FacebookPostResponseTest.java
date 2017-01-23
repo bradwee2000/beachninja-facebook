@@ -1,8 +1,8 @@
 package com.beachninja.facebook.response;
 
-import com.beachninja.common.json.ObjectMapperProvider;
 import com.beachninja.facebook.post.FacebookPostRequest;
 import com.beachninja.facebook.post.FacebookPostResponse;
+import com.beachninja.facebook.util.TestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import org.joda.time.LocalDateTime;
@@ -54,7 +54,7 @@ public class FacebookPostResponseTest {
 
   @Test
   public void testSerializeDeserialize_shouldReturnEqualObject() throws IOException {
-    final ObjectMapper om = new ObjectMapperProvider().get();
+    final ObjectMapper om = TestUtil.om();
     final FacebookPostResponse facebookPostResponse = FacebookPostResponse.builder().id("sampleId").build();
 
     // Serialize to JSON

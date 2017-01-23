@@ -1,4 +1,4 @@
-package com.beachninja.facebook.batch;
+package com.beachninja.facebook.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

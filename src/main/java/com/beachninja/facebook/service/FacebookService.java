@@ -1,15 +1,15 @@
 package com.beachninja.facebook.service;
 
-
-import com.beachninja.common.json.ObjectMapperProvider;
 import com.beachninja.facebook.batch.BatchRequest;
 import com.beachninja.facebook.batch.BatchResponse;
 import com.beachninja.facebook.error.FacebookErrorResponse;
 import com.beachninja.facebook.exception.FacebookException;
+import com.beachninja.facebook.model.Website;
 import com.beachninja.facebook.post.FacebookPostRequest;
 import com.beachninja.facebook.post.FacebookPostResponse;
 import com.beachninja.facebook.scrape.FacebookScrapeRequest;
 import com.beachninja.facebook.scrape.FacebookScrapeResponse;
+import com.beachninja.facebook.util.ObjectMapperProvider;
 import com.beachninja.urlfetch.UrlFetcher;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -99,11 +99,24 @@ public class FacebookService {
 
     LOG.debug("Batch Scrape Request: {}", batchRequest);
 
-    final BatchResponse batchResponse = submitBatch(batchRequest);
+    final List<BatchResponse> batchResponses = submitBatch(batchRequest);
 
-    LOG.debug("Batch Scrape Response: {}", batchResponse);
+    final FacebookScrapeResponse.Builder scrapeResponseBuilder = FacebookScrapeResponse.builder();
+    try {
+      for (final BatchResponse batchResponse : batchResponses) {
+        LOG.debug("Batch Scrape Response: {}", batchResponse);
 
-    return FacebookScrapeResponse.builder().apiResponse(batchResponse).build();
+        if (batchResponse.getCode() == 200)   {
+          scrapeResponseBuilder.addWebsite(om.readValue(batchResponse.getBody(), Website.class));
+        } else {
+          final FacebookErrorResponse errorResponse = om.readValue(batchResponse.getBody(), FacebookErrorResponse.class);
+          scrapeResponseBuilder.addError(errorResponse.getFacebookError());
+        }
+      }
+      return scrapeResponseBuilder.build();
+    } catch (final Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -114,7 +127,7 @@ public class FacebookService {
    * @throws ExecutionException
    * @throws InterruptedException
    */
-  public BatchResponse submitBatch(final BatchRequest request) {
+  public List<BatchResponse> submitBatch(final BatchRequest request) {
     try {
       final HTTPResponse response = urlFetcher.connect(BATCH_URL)
           .data("access_token", request.getAccessToken())
@@ -125,8 +138,7 @@ public class FacebookService {
 
       final String apiResponse = new String(response.getContent(), CHARSET_UTF8);
 
-      final List<BatchResponse> responses = om.readValue(apiResponse, new TypeReference<List<BatchResponse>>() {});
-      return responses.isEmpty() ? new BatchResponse() : responses.get(0);
+      return om.readValue(apiResponse, new TypeReference<List<BatchResponse>>() {});
     } catch (final Exception e) {
       throw new RuntimeException(e);
     }

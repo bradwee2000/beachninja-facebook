@@ -1,6 +1,6 @@
 package com.beachninja.facebook.batch;
 
-import com.beachninja.common.json.ObjectMapperProvider;
+import com.beachninja.facebook.util.TestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import org.junit.Test;
@@ -44,7 +44,7 @@ public class BatchItemTest {
 
   @Test
   public void testSerializeDeserialize_shouldReturnEqualObject() throws IOException {
-    final ObjectMapper om = new ObjectMapperProvider().get();
+    final ObjectMapper om = TestUtil.om();
     final String json = om.writeValueAsString(orig);
     final BatchItem batchItem = om.readValue(json, BatchItem.class);
     assertThat(batchItem).isEqualTo(orig);
