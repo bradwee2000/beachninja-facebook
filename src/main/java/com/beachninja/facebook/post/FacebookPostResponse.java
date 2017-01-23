@@ -1,14 +1,9 @@
 package com.beachninja.facebook.post;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.datatype.joda.deser.LocalDateTimeDeserializer;
-import com.fasterxml.jackson.datatype.joda.ser.LocalDateTimeSerializer;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
-import org.apache.commons.lang.exception.ExceptionUtils;
-import org.joda.time.LocalDateTime;
 
 /**
  * This will contain the Facebook Post API Response.
@@ -22,64 +17,27 @@ public class FacebookPostResponse {
     return new Builder();
   }
 
-  public static FacebookPostResponse fail(final Exception exception) {
-    return new Builder().exception(exception).build();
-  }
-
-  private final FacebookPostRequest request;
-
-  private final String apiResponse;
-
-  @JsonSerialize(using = LocalDateTimeSerializer.class)
-  @JsonDeserialize(using = LocalDateTimeDeserializer.class)
-  private final LocalDateTime dateTime;
-
-  private final Exception exception;
+  @JsonProperty("id")
+  private final String id;
 
   /**
    * For Jackson deserializing
    */
   private FacebookPostResponse() {
-    this.request = null;
-    this.apiResponse = null;
-    this.dateTime = null;
-    this.exception = null;
+    this.id = null;
   }
 
-  private FacebookPostResponse(final FacebookPostRequest request,
-                              final String apiResponse,
-                              final LocalDateTime dateTime,
-                              final Exception exception) {
-    this.request = request;
-    this.apiResponse = apiResponse;
-    this.dateTime = dateTime;
-    this.exception = exception;
+  private FacebookPostResponse(@JsonProperty("id") final String id) {
+    this.id = id;
   }
 
-  public FacebookPostRequest getRequest() {
-    return request;
-  }
-
-  public String getApiResponse() {
-    return apiResponse;
-  }
-
-  public LocalDateTime getDateTime() {
-    return dateTime;
-  }
-
-  public Exception getException() {
-    return exception;
+  public String getId() {
+    return id;
   }
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("request", request)
-        .add("apiResponse", apiResponse)
-        .add("time", dateTime)
-        .add("exception", ExceptionUtils.getFullStackTrace(exception))
-        .toString();
+    return MoreObjects.toStringHelper(this).add("id", id).toString();
   }
 
   @Override
@@ -91,48 +49,27 @@ public class FacebookPostResponse {
       return true;
     }
     final FacebookPostResponse rhs = (FacebookPostResponse) obj;
-    return Objects.equal(apiResponse, rhs.apiResponse)
-        && Objects.equal(request, rhs.request)
-        && Objects.equal(exception, rhs.exception)
-        && Objects.equal(dateTime, rhs.dateTime);
+    return Objects.equal(id, rhs.id);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(request, apiResponse, exception, dateTime);
+    return Objects.hashCode(id);
   }
 
   /**
    * Builder class
    */
   public static class Builder {
-    private FacebookPostRequest request;
-    private String apiResponse;
-    private Exception exception;
-    private LocalDateTime dateTime;
+    private String id;
 
-    public Builder request(final FacebookPostRequest request) {
-      this.request = request;
-      return this;
-    }
-
-    public Builder apiResponse(final String apiResponse) {
-      this.apiResponse = apiResponse;
-      return this;
-    }
-
-    public Builder exception(final Exception exception) {
-      this.exception = exception;
-      return this;
-    }
-
-    public Builder dateTime(final LocalDateTime dateTime) {
-      this.dateTime = dateTime;
+    public Builder id(final String id) {
+      this.id = id;
       return this;
     }
 
     public FacebookPostResponse build() {
-      return new FacebookPostResponse(request, apiResponse, dateTime, exception);
+      return new FacebookPostResponse(id);
     }
   }
 }

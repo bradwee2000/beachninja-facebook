@@ -26,48 +26,36 @@ public class FacebookPostResponseTest {
   private final Exception exception = mock(Exception.class);
 
   private final FacebookPostResponse orig = FacebookPostResponse.builder()
-      .request(request).apiResponse("Success").dateTime(now).exception(exception).build();
-  private final FacebookPostResponse same = FacebookPostResponse.builder()
-      .request(request).apiResponse("Success").dateTime(now).exception(exception).build();
-  private final FacebookPostResponse diffRequest = FacebookPostResponse.builder()
-      .request(null).apiResponse("Success").dateTime(now).exception(exception).build();
-  private final FacebookPostResponse diffApiResponse = FacebookPostResponse.builder()
-      .request(request).apiResponse("Fail").dateTime(now).exception(exception).build();
-  private final FacebookPostResponse diffDateTime = FacebookPostResponse.builder()
-      .request(request).apiResponse("Success").dateTime(now.plusDays(1)).exception(exception).build();
-  private final FacebookPostResponse diffException = FacebookPostResponse.builder()
-      .request(request).apiResponse("Success").dateTime(now).exception(null).build();
+      .id("response_id").build();
+  private final FacebookPostResponse equal = FacebookPostResponse.builder()
+      .id("response_id").build();
+  private final FacebookPostResponse diffId = FacebookPostResponse.builder()
+      .id("diff_response_id").build();
 
   @Test
   public void testBuild_shouldSetProperties() {
-    assertThat(orig.getRequest()).isEqualTo(request);
-    assertThat(orig.getApiResponse()).isEqualTo("Success");
-    assertThat(orig.getDateTime()).isEqualTo(now);
-    assertThat(orig.getException()).isEqualTo(exception);
+    assertThat(orig.getId()).isEqualTo("response_id");
   }
 
   @Test
   public void testEquals_shouldBeEqualIfAllPropertiesAreEqual() {
-    assertThat(same).isEqualTo(orig);
-    assertThat(orig).isEqualTo(same)
-        .isNotEqualTo(diffRequest)
-        .isNotEqualTo(diffApiResponse)
-        .isNotEqualTo(diffDateTime)
-        .isNotEqualTo(diffException);
+    assertThat(equal).isEqualTo(orig);
+    assertThat(orig).isEqualTo(equal).isEqualTo(orig)
+        .isNotEqualTo(null)
+        .isNotEqualTo("")
+        .isNotEqualTo(diffId);
   }
 
   @Test
   public void testHashcode_shouldHaveSameHashcodeIfAllPropertiesAreEqual() {
-    assertThat(Sets.newHashSet(orig, same, diffRequest, diffApiResponse, diffDateTime, diffException))
-        .containsExactlyInAnyOrder(orig, diffRequest, diffApiResponse, diffDateTime, diffException);
+    assertThat(Sets.newHashSet(orig, equal, diffId))
+        .containsExactlyInAnyOrder(orig, diffId);
   }
 
   @Test
   public void testSerializeDeserialize_shouldReturnEqualObject() throws IOException {
     final ObjectMapper om = new ObjectMapperProvider().get();
-    final FacebookPostRequest facebookPostRequest = FacebookPostRequest.builder().facebookId("test_id").build();
-    final FacebookPostResponse facebookPostResponse = FacebookPostResponse.builder()
-        .dateTime(now).request(facebookPostRequest).apiResponse("Api Response").build();
+    final FacebookPostResponse facebookPostResponse = FacebookPostResponse.builder().id("sampleId").build();
 
     // Serialize to JSON
     final String json = om.writeValueAsString(facebookPostResponse);

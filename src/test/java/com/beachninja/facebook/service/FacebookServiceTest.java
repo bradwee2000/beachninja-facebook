@@ -22,6 +22,7 @@ import java.util.concurrent.Future;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.data.Index.atIndex;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -51,7 +52,7 @@ public class FacebookServiceTest {
     when(urlFetchBuilder.data(anyString(), any(String.class))).thenReturn(urlFetchBuilder);
     when(urlFetchBuilder.post()).thenReturn(futureResponse);
     when(futureResponse.get()).thenReturn(httpResponse);
-    when(httpResponse.getContent()).thenReturn("SUCCESS".getBytes());
+    when(httpResponse.getContent()).thenReturn("{\"id\":\"sampleId\"}".getBytes());
     when(httpResponse.getResponseCode()).thenReturn(200);
   }
 
@@ -74,8 +75,8 @@ public class FacebookServiceTest {
     // Verify that a response is returned
     assertThat(facebookService.post(FacebookPostRequest.builder()
         .facebookId("id").build())
-        .getApiResponse())
-        .isEqualTo("SUCCESS");
+        .getId())
+        .isEqualTo("sampleId");
   }
 
   @Test
@@ -148,19 +149,19 @@ public class FacebookServiceTest {
     final ArgumentCaptor<String> valueCaptor = ArgumentCaptor.forClass(String.class);
 
     // Call scrape
-    facebookService.scrape(FacebookScrapeRequest.builder().addLink("localhost1").addLink("localhost2").build());
+    facebookService.scrape(FacebookScrapeRequest.builder()
+        .accessToken("mock_token").addLink("localhost1").addLink("localhost2").build());
 
     // Verify urlFetcher is used
     verify(urlFetchBuilder, atLeastOnce()).data(keyCaptor.capture(), valueCaptor.capture());
 
-    //TODO
     // Verify that all key parameters are included
     assertThat(keyCaptor.getAllValues())
-        .containsExactly("id", "scrape", "access_token", "id", "scrape", "access_token");
+        .containsExactly("access_token", "batch");
 
     // Verify that all submitted values are included
-    assertThat(valueCaptor.getAllValues())
-        .contains("localhost1", "localhost2", "true", "true");
+    assertThat(valueCaptor.getAllValues()).contains("mock_token", atIndex(0));
+    assertThat(valueCaptor.getAllValues().get(1)).contains("localhost1", "localhost2");
   }
 
   @Test

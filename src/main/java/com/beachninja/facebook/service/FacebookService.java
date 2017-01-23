@@ -78,7 +78,7 @@ public class FacebookService {
           .post().get();
       assertSuccessfulResponse(response);
       final String apiResponse  = new String(response.getContent());
-      return FacebookPostResponse.builder().request(request).apiResponse(apiResponse).build();
+      return om.readValue(apiResponse, FacebookPostResponse.class);
     } catch (final Exception e) {
       throw new RuntimeException(e);
     }
@@ -97,7 +97,11 @@ public class FacebookService {
         .addItems(request.toBatchItems())
         .build();
 
+    LOG.debug("Batch Scrape Request: {}", batchRequest);
+
     final BatchResponse batchResponse = submitBatch(batchRequest);
+
+    LOG.debug("Batch Scrape Response: {}", batchResponse);
 
     return FacebookScrapeResponse.builder().apiResponse(batchResponse).build();
   }
