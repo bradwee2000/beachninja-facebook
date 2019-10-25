@@ -2,12 +2,13 @@ package com.beachninja.facebook.post;
 
 import com.beachninja.facebook.batch.BatchItem;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.appengine.repackaged.org.codehaus.jackson.annotate.JsonIgnoreProperties;
-import com.google.appengine.repackaged.org.codehaus.jackson.annotate.JsonProperty;
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Objects;
-import com.google.common.base.Optional;
-import org.joda.time.DateTime;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  *
@@ -15,53 +16,27 @@ import org.joda.time.DateTime;
  *
  * @author bradwee2000@gmail.com
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class FacebookPostRequest {
 
   public static Builder builder() {
     return new Builder();
   }
 
-  @JsonProperty("accessToken")
-  private final String accessToken; // User or page access token
-
-  @JsonProperty("facebookId")
-  private final String facebookId; // Facebook user or page ID
-
-  @JsonProperty("name")
-  private final String name; // The name of the link
-
-  @JsonProperty("message")
-  private final String message; // The optional message from the user about this link.
-
-  @JsonProperty("link")
-  private final String link; // The post permalink
-
-  @JsonProperty("imageUrl")
-  private final String imageUrl; // A URL to the thumbnail image used in the link post
-
-  @JsonProperty("description")
-  private final String description; // A description of the link (appears beneath the link as caption).
-
-  @JsonProperty("isPublished")
-  private final boolean isPublished; // If post is immediately published. Default: True
-
-  @JsonProperty("scheduledPublishTimeEpoch")
-  private final long scheduledPublishTimeEpoch; // Time in Unix timestamp when post will be published.
+  private String accessToken; // User or page access token
+  private String facebookId; // Facebook user or page ID
+  private Optional<String> name; // The name of the link
+  private Optional<String> message; // The optional message from the user about this link.
+  private Optional<String> link; // The post permalink
+  private Optional<String> imageUrl; // A URL to the thumbnail image used in the link post
+  private Optional<String> description; // A description of the link (appears beneath the link as caption).
+  private boolean isPublished; // If post is immediately published. Default: True
+  private long scheduledPublishTimeEpoch; // Time in Unix timestamp when post will be published.
 
   /**
    * For Jackson deserializing.
    */
-  private FacebookPostRequest() {
-    this.facebookId = null;
-    this.name = null;
-    this.message = null;
-    this.link = null;
-    this.imageUrl = null;
-    this.description = null;
-    this.isPublished = true;
-    this.scheduledPublishTimeEpoch = 0;
-    this.accessToken = null;
+  public FacebookPostRequest() {
+
   }
 
   /**
@@ -74,21 +49,21 @@ public class FacebookPostRequest {
                               final String link,
                               final String imageUrl,
                               final String description,
-                              final DateTime scheduledPublishDateTime) {
+                              final LocalDateTime scheduledPublishDateTime) {
     this.accessToken = accessToken;
     this.facebookId = facebookId;
-    this.name = name;
-    this.message = message;
-    this.link = link;
-    this.imageUrl = imageUrl;
-    this.description = description;
+    this.name = Optional.ofNullable(name);
+    this.message = Optional.ofNullable(message);
+    this.link = Optional.ofNullable(link);
+    this.imageUrl = Optional.ofNullable(imageUrl);
+    this.description = Optional.ofNullable(description);
 
     if (scheduledPublishDateTime == null) {
       this.isPublished = true;
       this.scheduledPublishTimeEpoch = 0;
     } else {
       this.isPublished = false;
-      this.scheduledPublishTimeEpoch = scheduledPublishDateTime.toDate().getTime() / 1000;
+      this.scheduledPublishTimeEpoch = scheduledPublishDateTime.atZone(ZoneId.systemDefault()).toEpochSecond();
     }
   }
 
@@ -101,23 +76,68 @@ public class FacebookPostRequest {
   }
 
   public Optional<String> getName() {
-    return Optional.fromNullable(name);
+    return name;
   }
 
   public Optional<String> getMessage() {
-    return Optional.fromNullable(message);
+    return message;
   }
 
   public Optional<String> getLink() {
-    return Optional.fromNullable(link);
+    return link;
   }
 
   public Optional<String> getImageUrl() {
-    return Optional.fromNullable(imageUrl);
+    return imageUrl;
   }
 
   public Optional<String> getDescription() {
-    return Optional.fromNullable(description);
+    return description;
+  }
+
+  public FacebookPostRequest setAccessToken(String accessToken) {
+    this.accessToken = accessToken;
+    return this;
+  }
+
+  public FacebookPostRequest setFacebookId(String facebookId) {
+    this.facebookId = facebookId;
+    return this;
+  }
+
+  public FacebookPostRequest setName(String name) {
+    this.name = Optional.ofNullable(name);
+    return this;
+  }
+
+  public FacebookPostRequest setMessage(String message) {
+    this.message = Optional.ofNullable(message);
+    return this;
+  }
+
+  public FacebookPostRequest setLink(String link) {
+    this.link = Optional.ofNullable(link);
+    return this;
+  }
+
+  public FacebookPostRequest setImageUrl(String imageUrl) {
+    this.imageUrl = Optional.ofNullable(imageUrl);
+    return this;
+  }
+
+  public FacebookPostRequest setDescription(String description) {
+    this.description = Optional.ofNullable(description);
+    return this;
+  }
+
+  public FacebookPostRequest setPublished(boolean published) {
+    isPublished = published;
+    return this;
+  }
+
+  public FacebookPostRequest setScheduledPublishTimeEpoch(long scheduledPublishTimeEpoch) {
+    this.scheduledPublishTimeEpoch = scheduledPublishTimeEpoch;
+    return this;
   }
 
   @JsonIgnore
@@ -131,21 +151,13 @@ public class FacebookPostRequest {
 
   public String toUrlParams() {
     final StringBuilder sb = new StringBuilder();
-    if (getName().isPresent()) {
-      sb.append("&name=").append(name);
-    }
-    if (getMessage().isPresent()) {
-      sb.append("&message=").append(message);
-    }
-    if (getLink().isPresent()) {
-      sb.append("&link=").append(link);
-    }
-    if (getImageUrl().isPresent()) {
-      sb.append("&picture=").append(imageUrl);
-    }
-    if (getDescription().isPresent()) {
-      sb.append("&description=").append(description);
-    }
+    name.ifPresent(v -> sb.append("&name=").append(v));
+    message.ifPresent(v -> sb.append("&message=").append(v));
+    link.ifPresent(v -> sb.append("&link=").append(v));
+    imageUrl.ifPresent(v -> sb.append("&picture=").append(v));
+    description.ifPresent(v -> sb.append("&description=").append(v));
+
+
     if (!isPublished) {
       sb.append("&published=").append(isPublished);
       sb.append("&scheduled_publish_time=").append(scheduledPublishTimeEpoch);
@@ -160,43 +172,40 @@ public class FacebookPostRequest {
         .build();
   }
 
-  public boolean equals(final Object obj) {
-    if (obj == null || obj.getClass() != getClass() || !(obj instanceof FacebookPostRequest)) {
-      return false;
-    }
-    if (obj == this) {
-      return true;
-    }
-    final FacebookPostRequest rhs = (FacebookPostRequest) obj;
-    return Objects.equal(accessToken, rhs.accessToken)
-        && Objects.equal(facebookId, rhs.facebookId)
-        && Objects.equal(name, rhs.name)
-        && Objects.equal(message, rhs.message)
-        && Objects.equal(description, rhs.description)
-        && Objects.equal(link, rhs.link)
-        && Objects.equal(imageUrl, rhs.imageUrl)
-        && Objects.equal(isPublished, rhs.isPublished)
-        && Objects.equal(scheduledPublishTimeEpoch, rhs.scheduledPublishTimeEpoch);
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    FacebookPostRequest that = (FacebookPostRequest) o;
+    return isPublished == that.isPublished &&
+            scheduledPublishTimeEpoch == that.scheduledPublishTimeEpoch &&
+            Objects.equals(accessToken, that.accessToken) &&
+            Objects.equals(facebookId, that.facebookId) &&
+            Objects.equals(name, that.name) &&
+            Objects.equals(message, that.message) &&
+            Objects.equals(link, that.link) &&
+            Objects.equals(imageUrl, that.imageUrl) &&
+            Objects.equals(description, that.description);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(accessToken, facebookId, name, message, description,
-        link, imageUrl, isPublished, scheduledPublishTimeEpoch);
+    return Objects.hash(accessToken, facebookId, name, message, link, imageUrl, description, isPublished, scheduledPublishTimeEpoch);
   }
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("facebookId", facebookId)
-        .add("name", name)
-        .add("message", message)
-        .add("description", description)
-        .add("link", link)
-        .add("imageUrl", imageUrl)
-        .add("isPublished", isPublished)
-        .add("scheduledPublishTimeEpoch", scheduledPublishTimeEpoch)
-        .toString();
+    return "FacebookPostRequest{" +
+            "accessToken='" + accessToken + '\'' +
+            ", facebookId='" + facebookId + '\'' +
+            ", name=" + name +
+            ", message=" + message +
+            ", link=" + link +
+            ", imageUrl=" + imageUrl +
+            ", description=" + description +
+            ", isPublished=" + isPublished +
+            ", scheduledPublishTimeEpoch=" + scheduledPublishTimeEpoch +
+            '}';
   }
 
   /**
@@ -210,7 +219,7 @@ public class FacebookPostRequest {
     private String link;
     private String imageUrl;
     private String description;
-    private DateTime publishDateTime;
+    private LocalDateTime publishDateTime;
 
     public Builder accessToken(final String accessToken) {
       this.accessToken = accessToken;
@@ -247,7 +256,7 @@ public class FacebookPostRequest {
       return this;
     }
 
-    public Builder schedulePublish(final DateTime publishDateTime) {
+    public Builder schedulePublish(final LocalDateTime publishDateTime) {
       this.publishDateTime = publishDateTime;
       return this;
     }

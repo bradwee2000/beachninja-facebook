@@ -4,7 +4,6 @@ import com.beachninja.facebook.error.FacebookError;
 import com.beachninja.facebook.model.Website;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.appengine.repackaged.com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
@@ -63,7 +62,10 @@ public class FacebookScrapeResponse {
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this).add("websites", websites).toString();
+    return "FacebookScrapeResponse{" +
+            "websites=" + websites +
+            ", errors=" + errors +
+            '}';
   }
 
   public static final class Builder {

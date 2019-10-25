@@ -2,7 +2,6 @@ package com.beachninja.facebook.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.appengine.repackaged.com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
@@ -101,9 +100,14 @@ public class Website {
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("url", url).add("type", type).add("title", title).add("images", images).add("description", description)
-        .toString();
+    return "Website{" +
+            "url='" + url + '\'' +
+            ", type='" + type + '\'' +
+            ", title='" + title + '\'' +
+            ", images=" + images +
+            ", description='" + description + '\'' +
+            ", id='" + id + '\'' +
+            '}';
   }
 
   /**

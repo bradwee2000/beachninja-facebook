@@ -1,8 +1,6 @@
 package com.beachninja.facebook.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
 
 /**
  * @author bradwee2000@gmail.com
@@ -13,9 +11,7 @@ public class TestUtil {
 
   public static ObjectMapper om() {
     if (OM_INSTANCE == null) {
-      OM_INSTANCE = new ObjectMapper()
-          .registerModule(new JodaModule())
-          .registerModule(new GuavaModule().configureAbsentsAsNulls(false));
+      OM_INSTANCE = new ObjectMapper();
     }
     return OM_INSTANCE;
   }

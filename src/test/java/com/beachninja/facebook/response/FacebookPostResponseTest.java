@@ -5,12 +5,12 @@ import com.beachninja.facebook.post.FacebookPostResponse;
 import com.beachninja.facebook.util.TestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
-import org.joda.time.LocalDateTime;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -21,7 +21,7 @@ import static org.mockito.Mockito.mock;
 public class FacebookPostResponseTest {
   private static final Logger LOG = LoggerFactory.getLogger(FacebookPostResponseTest.class);
 
-  private final LocalDateTime now = new LocalDateTime(2016, 2, 1, 12, 13, 45);
+  private final LocalDateTime now = LocalDateTime.of(2016, 2, 1, 12, 13, 45);
   private final FacebookPostRequest request = mock(FacebookPostRequest.class);
   private final Exception exception = mock(Exception.class);
 

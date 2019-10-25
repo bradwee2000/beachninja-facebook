@@ -1,8 +1,7 @@
 package com.beachninja.facebook.scrape;
 
 import com.beachninja.facebook.batch.BatchItem;
-import com.google.appengine.repackaged.com.google.common.base.MoreObjects;
-import com.google.appengine.repackaged.org.codehaus.jackson.annotate.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
@@ -70,9 +69,10 @@ public class FacebookScrapeRequest {
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("link", links)
-        .toString();
+    return "FacebookScrapeRequest{" +
+            "accessToken='" + accessToken + '\'' +
+            ", links=" + links +
+            '}';
   }
 
   public List<BatchItem> toBatchItems() {

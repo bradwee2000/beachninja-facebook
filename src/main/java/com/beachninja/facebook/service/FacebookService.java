@@ -9,23 +9,26 @@ import com.beachninja.facebook.post.FacebookPostRequest;
 import com.beachninja.facebook.post.FacebookPostResponse;
 import com.beachninja.facebook.scrape.FacebookScrapeRequest;
 import com.beachninja.facebook.scrape.FacebookScrapeResponse;
-import com.beachninja.facebook.util.ObjectMapperProvider;
-import com.beachninja.urlfetch.UrlFetcher;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.appengine.api.urlfetch.HTTPResponse;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import com.google.common.base.Charsets;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.fluent.Form;
+import org.apache.http.client.fluent.Request;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import static com.beachninja.facebook.util.FacebookConstants.*;
+import static com.beachninja.facebook.util.FacebookConstants.BATCH_URL;
+import static com.beachninja.facebook.util.FacebookConstants.CHARSET_UTF8;
+import static com.beachninja.facebook.util.FacebookConstants.POST_URL;
 
 /**
  * Service to post on Facebook account time line.
@@ -47,18 +50,13 @@ import static com.beachninja.facebook.util.FacebookConstants.*;
  *
  * @author bradwee2000@gmail.com
  */
-@Singleton
 public class FacebookService {
   private static final Logger LOG = LoggerFactory.getLogger(FacebookService.class);
 
-  private final UrlFetcher urlFetcher;
   private final ObjectMapper om;
 
-  @Inject
-  public FacebookService(final UrlFetcher urlFetcher,
-                         final ObjectMapperProvider objectMapperProvider) {
-    this.urlFetcher = urlFetcher;
-    this.om = objectMapperProvider.get();
+  public FacebookService(final ObjectMapper om) {
+    this.om = om;
   }
 
   /**
@@ -68,16 +66,20 @@ public class FacebookService {
    */
   public FacebookPostResponse post(final FacebookPostRequest request) {
     try {
-      final HTTPResponse response = urlFetcher.connect(String.format(POST_URL, request.getFacebookId()))
-          .data("title", request.getName().or(""))
-          .data("message", request.getMessage().or(""))
-          .data("link", request.getLink().or(""))
-          .data("picture", request.getImageUrl().or(""))
-          .data("description", request.getDescription().or(""))
-          .data("access_token", request.getAccessToken())
-          .post().get();
+      final HttpResponse response = Request.Post(String.format(POST_URL, request.getFacebookId()))
+              .bodyForm(Form.form()
+                      .add("title", request.getName().orElse(""))
+                      .add("message", request.getMessage().orElse(""))
+                      .add("link", request.getLink().orElse(""))
+                      .add("picture", request.getImageUrl().orElse(""))
+                      .add("description", request.getDescription().orElse(""))
+                      .add("access_token", request.getAccessToken())
+                      .build())
+              .execute()
+              .returnResponse();
+
       assertSuccessfulResponse(response);
-      final String apiResponse  = new String(response.getContent());
+      final String apiResponse  = IOUtils.toString(response.getEntity().getContent(), Charsets.UTF_8);
       return om.readValue(apiResponse, FacebookPostResponse.class);
     } catch (final Exception e) {
       throw new RuntimeException(e);
@@ -129,14 +131,17 @@ public class FacebookService {
    */
   public List<BatchResponse> submitBatch(final BatchRequest request) {
     try {
-      final HTTPResponse response = urlFetcher.connect(BATCH_URL)
-          .data("access_token", request.getAccessToken())
-          .data("batch", URLEncoder.encode(om.writeValueAsString(request.getBatchItems()), CHARSET_UTF8))
-          .post().get();
+      final HttpResponse response = Request.Post(BATCH_URL)
+              .bodyForm(Form.form()
+                      .add("access_token", request.getAccessToken())
+                      .add("batch", URLEncoder.encode(om.writeValueAsString(request.getBatchItems()), CHARSET_UTF8))
+                      .build()
+              ).execute()
+              .returnResponse();
 
       assertSuccessfulResponse(response);
 
-      final String apiResponse = new String(response.getContent(), CHARSET_UTF8);
+      final String apiResponse = IOUtils.toString(response.getEntity().getContent(), Charsets.UTF_8);
 
       return om.readValue(apiResponse, new TypeReference<List<BatchResponse>>() {});
     } catch (final Exception e) {
@@ -144,10 +149,11 @@ public class FacebookService {
     }
   }
 
-  private void assertSuccessfulResponse(final HTTPResponse httpResponse) {
+  private void assertSuccessfulResponse(final HttpResponse response) {
     try {
-      if (httpResponse.getResponseCode() != 200) {
-        final FacebookErrorResponse errorResponse = om.readValue(new String(httpResponse.getContent()),
+      if (response.getStatusLine().getStatusCode() != 200) {
+        final InputStream is = response.getEntity().getContent();
+        final FacebookErrorResponse errorResponse = om.readValue(IOUtils.toString(is, Charsets.UTF_8),
             FacebookErrorResponse.class);
         throw new FacebookException(errorResponse);
       }

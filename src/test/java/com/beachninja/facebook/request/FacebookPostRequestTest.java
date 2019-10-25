@@ -5,13 +5,12 @@ import com.beachninja.facebook.post.FacebookPostRequest;
 import com.beachninja.facebook.util.TestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -88,30 +87,11 @@ public class FacebookPostRequestTest {
   }
 
   @Test
-  public void testSerializeDeserialize_shouldReturnEqualObject() throws IOException {
-    final ObjectMapper om = TestUtil.om();
-    final String json = om.writeValueAsString(orig);
-    final FacebookPostRequest request = om.readValue(json, FacebookPostRequest.class);
-
-    assertThat(request).isEqualTo(orig);
-  }
-
-  @Test
-  public void testDeserializeWithNullValues_shouldConvertNullToOptionalAbsent() throws IOException {
-    final ObjectMapper om = TestUtil.om();
-    final String json = "{\"facebookId\":\"id\", \"name\":null, \"message\":null, \"link\":null," +
-        "\"imageUrl\":null, \"description\":null}";
-
-    final FacebookPostRequest request = om.readValue(json, FacebookPostRequest.class);
-    assertThat(request).isEqualTo(FacebookPostRequest.builder().facebookId("id").build());
-  }
-
-  @Test
   public void testScheduledPostRequest_shouldSetPublishToFalse() {
-    final DateTime publishDate = new DateTime(2016, 2, 1, 12, 13, 45, DateTimeZone.UTC);
+    final LocalDateTime publishDate = LocalDateTime.of(2016, 2, 1, 12, 13, 45);
     final FacebookPostRequest request = FacebookPostRequest.builder().schedulePublish(publishDate).build();
 
     assertThat(request.isPublished()).isFalse();
-    assertThat(request.getScheduledPublishTimeEpoch()).isEqualTo(1454328825);
+    assertThat(request.getScheduledPublishTimeEpoch()).isEqualTo(1454300025L);
   }
 }
